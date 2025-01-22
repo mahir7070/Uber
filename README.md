@@ -40,3 +40,4 @@ Example:
 }'{
     "message": "All fields are required."
 }
+

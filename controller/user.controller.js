@@ -1,6 +1,7 @@
 import { User } from "../models/user.model.js";
+import BlacklistToken from "../models/blacklisttoken.model.js";
 
-const registeruser = async (req, res) => {
+const registeruser = async (req, res,next) => {
     try {
         const { fullname, password, email } = req.body;
 
@@ -38,7 +39,9 @@ const registeruser = async (req, res) => {
     }
 };
 
-const loginuser = async (req, res) => {
+
+
+const loginuser = async (req, res,next) => {
     try {
         const {password, email } = req.body;
 
@@ -70,7 +73,31 @@ const loginuser = async (req, res) => {
         return res.status(500).json({ message: "Internal server error." });
     }
 }
+ const getuserprofile = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(404).json({ message: "User not found." });
+        }
 
-export { registeruser, loginuser }
+        // Send the user details
+        res.status(200).json(req.user);
+    } catch (error) {
+        console.error("Error in getuserprofile:", error);
+        return res.status(500).json({ message: "Internal server error." });
+    }
+};
+
+
+const logoutuser = async (req, res) => {
+    res.clearCookie("token");
+    const token=req.cookies.token||req.headers.authorization.split(" ")[1];
+    
+    await BlacklistToken.create({ token });
+
+    res.status(200).json({ message: "Logout successful." });
+}
+
+
+export { registeruser, loginuser,getuserprofile ,logoutuser}
 
 
