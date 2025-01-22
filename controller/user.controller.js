@@ -38,4 +38,39 @@ const registeruser = async (req, res) => {
     }
 };
 
-export { registeruser };
+const loginuser = async (req, res) => {
+    try {
+        const {password, email } = req.body;
+
+        if (!password || !email) {
+            return res.status(400).json({ message: "All fields are required." });
+        }
+
+        const user = await User.findOne({ email }).select("+password");
+
+        if (!user) {
+            return res.status(400).json({ message: "Invalid credentials." });
+        }
+
+        const ispassword = await user.comparePassword(password);
+
+        if (!ispassword) {
+            return res.status(400).json({ message: "Invalid credentials." });
+        }
+
+        const token = await User.generateAuthToken(user._id);
+
+        return res.status(200).json({
+            message: "Login successful.",
+            token
+        });
+
+    } catch (error) {
+        console.error("Error in loginuser:", error.message || error);
+        return res.status(500).json({ message: "Internal server error." });
+    }
+}
+
+export { registeruser, loginuser }
+
+
