@@ -1,3 +1,4 @@
+import BlacklistToken from "../models/blacklisttoken.model.js";
 import Captain from "../models/captain.model.js";
 
 
@@ -71,6 +72,9 @@ if (!iscap) {
 }
 
 const token=await cap.generatetoken();
+res.cookie('token',token);
+
+
 
 res.status(200).json({message:"captain logged in successfully",captain:cap,token:token});
 
@@ -78,8 +82,23 @@ res.status(200).json({message:"captain logged in successfully",captain:cap,token
 
 
 
+const getcaptainprofile=async(req,res)=>{
+
+    res.status(200).json({captain:req.captain});
+
+}
+
+
+const logoutcaptain=async(req,res)=>{
+    const token=req.cookies.token||req.headers.authorization?.split(" ")[1];
+
+    await BlacklistToken.create({token});
+    res.clearCookie('token');
+    res.status(200).json({message:"captain logged out successfully"});
+
+}
 
 
 
 
-export {registercaptain,logincaptain};
+export {registercaptain,logincaptain,getcaptainprofile,logoutcaptain};
