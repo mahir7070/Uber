@@ -1,38 +1,42 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
+import BlacklistToken from "../models/blacklisttoken.model.js";
 
 export const auth = async (req, res, next) => {
     try {
-        // Retrieve token from cookies or authorization header
-        const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+        // Get token from cookies or authorization header
+        const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
         if (!token) {
             return res.status(401).json({ message: "Unauthorized: No token provided." });
         }
 
-        const isBlacklisted = await BlacklistToken.findOne({ token: token });
-
+        // Check if token is blacklisted
+        const isBlacklisted = await BlacklistToken.findOne({ token });
         if (isBlacklisted) {
             return res.status(401).json({ message: "Unauthorized: Token blacklisted." });
         }
 
-        // Verify token
+        // Verify token and extract user ID
         const decode = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Find the user by decoded token's ID
+        // Fetch user from the database
         const user = await User.findById(decode._id);
-
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
 
-        // Attach user object to the request for downstream usage
+        // Attach user to the request object
         req.user = user;
 
-        // Proceed to the next middleware or route handler
         next();
     } catch (error) {
-        console.error("Error in auth middleware:", error.message || error);
-        return res.status(401).json({ message: "Unauthorized: Invalid token." });
+        console.error("Error in auth middleware:", error.message);
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Token expired. Please log in again." });
+        } else if (error.name === "JsonWebTokenError") {
+            return res.status(401).json({ message: "Invalid token." });
+        }
+        return res.status(500).json({ message: "Internal server error." });
     }
 };

@@ -63,6 +63,9 @@ const loginuser = async (req, res,next) => {
 
         const token = await User.generateAuthToken(user._id);
 
+        res.cookie('token', token);
+
+
         return res.status(200).json({
             message: "Login successful.",
             token
@@ -73,19 +76,30 @@ const loginuser = async (req, res,next) => {
         return res.status(500).json({ message: "Internal server error." });
     }
 }
- const getuserprofile = async (req, res) => {
+
+
+const getuserprofile = async (req, res) => {
     try {
         if (!req.user) {
-            return res.status(404).json({ message: "User not found." });
+            console.error("No user found in request.");
+            return res.status(401).json({ message: "Unauthorized: User not authenticated." });
         }
 
         // Send the user details
-        res.status(200).json(req.user);
+        return res.status(200).json({
+            success: true,
+            message: "User profile retrieved successfully.",
+            data: req.user,
+        });
     } catch (error) {
-        console.error("Error in getuserprofile:", error);
-        return res.status(500).json({ message: "Internal server error." });
+        console.error("Error in getuserprofile:", error.message, error.stack);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+        });
     }
 };
+
 
 
 const logoutuser = async (req, res) => {
